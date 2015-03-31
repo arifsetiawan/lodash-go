@@ -43,6 +43,11 @@ func TestChunk(t *testing.T) {
 	})
 
 }
+func TestWithout(t *testing.T) {
+	arr := d.NewArray(1, 2, 3)
+	res := Without(arr, 1, 2)
+	Expect(res.At(0), t).toEqual(3)
+}
 func TestDifference(t *testing.T) {
 	type fixture struct {
 		array1   d.ArrayInterface
@@ -58,12 +63,18 @@ func TestDifference(t *testing.T) {
 		&fixture{
 			d.NewArray(4, 2),
 			d.NewArray(1, 2, 3),
-			d.NewArray(1, 3),
+			d.NewArray(4),
+		},
+		&fixture{
+			d.NewArray(1, 2),
+			d.NewArray(4, 2),
+			d.NewArray(1),
 		},
 	)
 	fixtures.ForEach(func(el interface{}, i int) {
 		fix := el.(*fixture)
 		result := Difference(fix.array1, fix.array2)
+		t.Log(result)
 		fix.expected.ForEach(func(el interface{}, i int) {
 			Expect(result.At(i), t).toEqual(el)
 		})

@@ -20,13 +20,18 @@ func Chunk(collection d.ArrayInterface, length int) d.ArrayInterface {
 	return result
 }
 
+// Difference creates an array excluding all provided values
+
 func Difference(array d.ArrayInterface, values d.ArrayInterface) d.ArrayInterface {
-	if values.Length() > array.Length() {
-		values, array = array, values
-	}
 	return array.Filter(func(el interface{}, i int) bool {
 		return values.IndexOf(el, 0) == -1
 	})
+}
+
+// Without creates an array excluding all provided values
+
+func Without(array d.ArrayInterface, values ...interface{}) d.ArrayInterface {
+	return Difference(array, d.NewArray(values...))
 }
 
 // Intersection creates an array of unique values in all provided arrays
@@ -51,13 +56,14 @@ func Xor(arrays ...d.ArrayInterface) d.ArrayInterface {
 	case 0:
 		return d.NewArray()
 	case 1:
-		return Unique(arrays[0].Slice())
+		return Unique(arrays[0])
 	case 2:
-		return Difference(Unique(arrays[0]), Unique(arrays[1]))
+		return Difference(Unique(arrays[0]), Unique(arrays[1])).Concat(Difference(Unique(arrays[1]), Unique(arrays[0])))
 
 	}
 	return Xor(append([]d.ArrayInterface{Xor(arrays[0], arrays[1])}, arrays[2:]...)...)
 }
+
 func IndexOf(array d.ArrayInterface, value interface{}, fromIndex int) int {
 	return array.IndexOf(value, fromIndex)
 }
