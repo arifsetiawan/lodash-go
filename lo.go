@@ -1,17 +1,18 @@
 package dash
 
 import (
-	d "github.com/interactiv/datastruct"
+	a "github.com/interactiv/datastruct/array"
 )
 
-func Chunk(collection d.ArrayInterface, length int) d.ArrayInterface {
-	result := d.NewArray()
+// Chunk Creates an array of elements split into groups the length of size. If collection can’t be split evenly, the final chunk will be the remaining elements.
+func Chunk(collection a.ArrayInterface, length int) a.ArrayInterface {
+	result := a.New()
 	if length <= 0 {
 		return result
 	}
 	temp := collection.Slice()
 	for temp.Length() > 0 {
-		a := d.NewArray()
+		a := a.New()
 		for i := 0; i < length && i <= temp.Length(); i++ {
 			a.Push(temp.Shift())
 		}
@@ -21,24 +22,22 @@ func Chunk(collection d.ArrayInterface, length int) d.ArrayInterface {
 }
 
 // Difference creates an array excluding all provided values
-
-func Difference(array d.ArrayInterface, values d.ArrayInterface) d.ArrayInterface {
+func Difference(array a.ArrayInterface, values a.ArrayInterface) a.ArrayInterface {
 	return array.Filter(func(el interface{}, i int) bool {
 		return values.IndexOf(el, 0) == -1
 	})
 }
 
 // Without creates an array excluding all provided values
-
-func Without(array d.ArrayInterface, values ...interface{}) d.ArrayInterface {
-	return Difference(array, d.NewArray(values...))
+func Without(array a.ArrayInterface, values ...interface{}) a.ArrayInterface {
+	return Difference(array, a.New(values...))
 }
 
 // Intersection creates an array of unique values in all provided arrays
-func Intersection(arrays ...d.ArrayInterface) d.ArrayInterface {
+func Intersection(arrays ...a.ArrayInterface) a.ArrayInterface {
 	switch len(arrays) {
 	case 0:
-		return d.NewArray()
+		return a.New()
 	case 1:
 		return Unique(arrays[0])
 	case 2:
@@ -47,33 +46,36 @@ func Intersection(arrays ...d.ArrayInterface) d.ArrayInterface {
 			return u.IndexOf(el, 0) >= 0
 		})
 	}
-	return Intersection(append([]d.ArrayInterface{Intersection(arrays[0], arrays[1])}, arrays[2:]...)...)
+	return Intersection(append([]a.ArrayInterface{Intersection(arrays[0], arrays[1])}, arrays[2:]...)...)
 }
 
 // Xor creates an array that is the symmetric difference of the provided arrays.
-func Xor(arrays ...d.ArrayInterface) d.ArrayInterface {
+func Xor(arrays ...a.ArrayInterface) a.ArrayInterface {
 	switch len(arrays) {
 	case 0:
-		return d.NewArray()
+		return a.New()
 	case 1:
 		return Unique(arrays[0])
 	case 2:
 		return Difference(Unique(arrays[0]), Unique(arrays[1])).Concat(Difference(Unique(arrays[1]), Unique(arrays[0])))
 
 	}
-	return Xor(append([]d.ArrayInterface{Xor(arrays[0], arrays[1])}, arrays[2:]...)...)
+	return Xor(append([]a.ArrayInterface{Xor(arrays[0], arrays[1])}, arrays[2:]...)...)
 }
 
-func IndexOf(array d.ArrayInterface, value interface{}, fromIndex int) int {
+// IndexOf returns the index of a value in the array from its begining, returns -1 if not found
+func IndexOf(array a.ArrayInterface, value interface{}, fromIndex int) int {
 	return array.IndexOf(value, fromIndex)
 }
 
-func LastIndexOf(array d.ArrayInterface, value interface{}, fromIndex int) int {
+// LastIndexOf returns the index of a value in the array from its end, returns -1 if not found
+func LastIndexOf(array a.ArrayInterface, value interface{}, fromIndex int) int {
 	return array.LastIndexOf(value, fromIndex)
 }
 
-func Union(arrays ...d.ArrayInterface) d.ArrayInterface {
-	result := d.NewArray()
+// Union returns an array filled by all unique values of the arrays
+func Union(arrays ...a.ArrayInterface) a.ArrayInterface {
+	result := a.New()
 	for _, array := range arrays {
 		array.ForEach(func(el interface{}, i int) {
 			if result.IndexOf(el, 0) == -1 {
@@ -84,8 +86,9 @@ func Union(arrays ...d.ArrayInterface) d.ArrayInterface {
 	return result
 }
 
-func Unique(array d.ArrayInterface) d.ArrayInterface {
-	res := d.NewArray()
+// Unique filters remove duplicate values from an array
+func Unique(array a.ArrayInterface) a.ArrayInterface {
+	res := a.New()
 	array.ForEach(func(val interface{}, i int) {
 		if res.IndexOf(val, 0) == -1 {
 			res.Push(val)
@@ -94,24 +97,51 @@ func Unique(array d.ArrayInterface) d.ArrayInterface {
 	return res
 }
 
-func First(array d.ArrayInterface) interface{} {
+// First returns the first element of an array
+func First(array a.ArrayInterface) interface{} {
 	return array.At(0)
 }
 
-func Last(array d.ArrayInterface) interface{} {
+// Last returns the last element of an array
+func Last(array a.ArrayInterface) interface{} {
 	return array.At(array.Length() - 1)
 }
 
-/*
-
-
-type DashStruct struct {
-	*datastruct.Array
+func Zip(arrays ...a.ArrayInterface) a.ArrayInterface {
+	result := a.New()
+	switch len(arrays) {
+	case 0:
+		return result
+	case 1:
+		return arrays[0].Slice()
+	default:
+		arrays[0].ForEach(func(el interface{}, i int) {
+			array := a.New()
+			for _, val := range arrays {
+				array.Push(val.At(i))
+			}
+			result.Push(array)
+		})
+	}
+	return result
 }
 
-
-
-func Dash(array interface{}) DashInterface {
-	return &DashStruct{datastruct.NewArrayFrom(array)}
+// Equal compares arrays elements , return true if arrays are equal
+func Equal(arrays ...a.ArrayInterface) bool {
+	switch len(arrays) {
+	case 0, 1:
+		return true
+	case 2:
+		return Difference(arrays[0], arrays[1]).Length() == 0
+	default:
+		return Equal(arrays[0], arrays[1]) && Equal(arrays[2:]...)
+	}
 }
-*/
+
+// Compact remove nil values from array
+func Compact(array a.ArrayInterface) a.ArrayInterface {
+	return array.Filter(func(el interface{}, i int) bool {
+		return el != nil
+	})
+
+}
