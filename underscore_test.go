@@ -1,9 +1,9 @@
-package array_test
+package underscore_test
 
 import (
 	"testing"
 
-	"github.com/interactiv/array"
+	"github.com/mparaiso/underscore-go"
 	"github.com/interactiv/expect"
 )
 
