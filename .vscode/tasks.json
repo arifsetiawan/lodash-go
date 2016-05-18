@@ -1,0 +1,41 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "0.1.0",
+    "command": "go",
+    "isShellCommand": true,
+    "showOutput": "always",
+    "tasks": [
+        {
+            "taskName": "install"
+        },
+        {
+            "taskName": "build",
+            "problemMatcher": {
+                "owner": "go",
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        },
+        {
+            "taskName": "test",
+            "args": [
+                "-cover"
+            ],
+            "problemMatcher": {
+                "owner": "go",
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "message": 4
+                }
+            }
+        }
+    ]
+}

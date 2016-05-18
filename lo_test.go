@@ -1,263 +1,309 @@
-// Copyright 2015 mparaiso<mparaiso@online.fr>. All rights reserved.
-// Use of this source code is governed by a MIT-style
-// license that can be found in the LICENSE file.
-
-package lo
+package lo_test
 
 import (
-	a "github.com/interactiv/datastruct/array"
+	//"github.com/interactiv/expect"
+	"github.com/mparaiso/lodash-go"
 	"reflect"
 	"testing"
 )
 
-type Expectation struct {
-	value interface{}
-	test  *testing.T
-}
-
-func (e *Expectation) toEqual(val interface{}) {
-	if e.value != val {
-		e.test.Errorf("%+v should equal %+v", e.value, val)
-	}
-}
-
-func Expect(val interface{}, t *testing.T) *Expectation {
-	return &Expectation{val, t}
-}
-
 func TestChunk(t *testing.T) {
-	type fixture struct {
-		array    a.ArrayInterface
-		length   int
-		expected a.ArrayInterface
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		collection []interface{}
+		length     int
+		// Expected results.
+		want []interface{}
+	}{
+		{"first test", []interface{}{1, 2, 3, 4}, 2, []interface{}{[]interface{}{1, 2}, []interface{}{3, 4}}},
 	}
-	fixtures := a.New(&fixture{
-		a.New(1, 2, 3, 4, 5),
-		3,
-		a.New(a.New(1, 2, 3), a.New(4, 5)),
-	})
-	fixtures.ForEach(func(el interface{}, i int) {
-		fix := el.(*fixture)
-		result := Chunk(fix.array, fix.length)
-		t.Logf("%+v", result)
-		fix.expected.ForEach(func(chunk interface{}, i int) {
-			chunk.(a.ArrayInterface).ForEach(func(val interface{}, j int) {
-				Expect(result.At(i).(a.ArrayInterface).At(j), t).toEqual(val)
-			})
-		})
-
-	})
-
-}
-
-func TestWithout(t *testing.T) {
-	arr := a.New(1, 2, 3)
-	res := Without(arr, 1, 2)
-	Expect(res.At(0), t).toEqual(3)
+	for _, tt := range tests {
+		if got := lo.Chunk(tt.collection, tt.length); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Chunk() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
 }
 
 func TestDifference(t *testing.T) {
-	type fixture struct {
-		array1   a.ArrayInterface
-		array2   a.ArrayInterface
-		expected a.ArrayInterface
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		array  []interface{}
+		values []interface{}
+		// Expected results.
+		want []interface{}
+	}{
+		{"Difference between 2 arrays", []interface{}{1, 2, 3, 4}, []interface{}{2, 4}, []interface{}{1, 3}},
 	}
-	fixtures := a.New(
-		&fixture{
-			a.New(1, 2, 3),
-			a.New(4, 2),
-			a.New(1, 3),
-		},
-		&fixture{
-			a.New(4, 2),
-			a.New(1, 2, 3),
-			a.New(4),
-		},
-		&fixture{
-			a.New(1, 2),
-			a.New(4, 2),
-			a.New(1),
-		},
-	)
-	fixtures.ForEach(func(el interface{}, i int) {
-		fix := el.(*fixture)
-		result := Difference(fix.array1, fix.array2)
-		t.Log(result)
-		fix.expected.ForEach(func(el interface{}, i int) {
-			Expect(result.At(i), t).toEqual(el)
-		})
-	})
+	for _, tt := range tests {
+		if got := lo.Difference(tt.array, tt.values); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Difference() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
 }
 
-func TestUnion(t *testing.T) {
-	type fixture struct {
-		arrays   []a.ArrayInterface
-		expected a.ArrayInterface
+func TestWithout(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		array  []interface{}
+		values []interface{}
+		// Expected results.
+		want []interface{}
+	}{
+		{"Array 1 without Array 2", []interface{}{1, 2, 3, 4}, []interface{}{2, 4}, []interface{}{1, 3}},
 	}
-	fixtures := a.New(
-		&fixture{
-			[]a.ArrayInterface{a.New(1, 2), a.New(4, 2), a.New(2, 1)},
-			a.New(1, 2, 4),
-		},
-	)
-	fixtures.ForEach(func(el interface{}, i int) {
-		fix := el.(*fixture)
-		result := Union(fix.arrays...)
-		fix.expected.ForEach(func(el interface{}, i int) {
-			Expect(result.At(i), t).toEqual(el)
-		})
-	})
-}
-
-func TestUniq(t *testing.T) {
-	type fixture struct {
-		array    a.ArrayInterface
-		expected a.ArrayInterface
+	for _, tt := range tests {
+		if got := lo.Without(tt.array, tt.values...); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Without() = %v, want %v", tt.name, got, tt.want)
+		}
 	}
-	fixtures := a.New(&fixture{
-		a.New(5, 2, 3, 4, 5, 2, 6, 1),
-		a.New(5, 2, 3, 4, 6, 1),
-	})
-	fixtures.ForEach(func(fix interface{}, i int) {
-		fixt := fix.(*fixture)
-		res := Unique(fixt.array)
-		fixt.expected.ForEach(func(val interface{}, i int) {
-			Expect(val, t).toEqual(res.At(i))
-		})
-	})
 }
 
 func TestIntersection(t *testing.T) {
-	type fixture struct {
-		args     []a.ArrayInterface
-		expected a.ArrayInterface
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		arrays [][]interface{}
+		// Expected results.
+		want []interface{}
+	}{
+		{
+			"Intersection of arrays",
+			[][]interface{}{{1, 2, 3, 4}, {2, 3, 5}, {0, 2, 3, 6}},
+			[]interface{}{2, 3},
+		},
 	}
-	fixtures := a.New(
-		&fixture{
-			[]a.ArrayInterface{a.New(1, 2), a.New(4, 2), a.New(2, 1)},
-			a.New(2),
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New(1, 2, 3, 1, 5, 2)},
-			a.New(1, 2, 3, 5),
-		},
-		&fixture{
-			[]a.ArrayInterface{},
-			a.New(),
-		},
-	)
-	fixtures.ForEach(func(val interface{}, i int) {
-		fix := val.(*fixture)
-		res := Intersection(fix.args...)
-		fix.expected.ForEach(func(val interface{}, i int) {
-			Expect(res.At(i), t).toEqual(val)
-		})
-	})
+	for _, tt := range tests {
+		if got := lo.Intersection(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Intersection() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
 }
 
 func TestXor(t *testing.T) {
-	type fixture struct {
-		args     []a.ArrayInterface
-		expected a.ArrayInterface
-	}
-	fixtures := []*fixture{
-		&fixture{
-			[]a.ArrayInterface{a.New(1, 2), a.New(4, 2)},
-			a.New(1, 4),
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		arrays [][]interface{}
+		// Expected results.
+		want []interface{}
+	}{
+		{
+			"Xor of arrays",
+			[][]interface{}{{1, 2, 3, 4}, {2, 3, 5}, {0, 2, 3, 6}},
+			[]interface{}{1, 4, 5, 0, 2, 3, 6},
 		},
 	}
-	for _, fixture := range fixtures {
-		res := Xor(fixture.args...)
-		//t.Log(res)
-		fixture.expected.ForEach(func(val interface{}, i int) {
-			Expect(res.At(i), t).toEqual(val)
-		})
+	for _, tt := range tests {
+		if got := lo.Xor(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Xor() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestLastIndexOf(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		array     []interface{}
+		value     interface{}
+		fromIndex int
+		// Expected results.
+		want int
+	}{
+		{"Last index", []interface{}{1, 2, 3, 4, 5, 2}, 2, 0, 5},
+	}
+	for _, tt := range tests {
+		if got := lo.LastIndexOf(tt.array, tt.value, tt.fromIndex); got != tt.want {
+			t.Errorf("%q. LastIndexOf() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestUnion(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		arrays [][]interface{}
+		// Expected results.
+		want []interface{}
+	}{}
+	for _, tt := range tests {
+		if got := lo.Union(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Union() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestUnique(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		array []interface{}
+		// Expected results.
+		want []interface{}
+	}{
+		{"Unique values", []interface{}{6, 4, 5, 6, 2, 4}, []interface{}{6, 4, 5, 2}},
+	}
+	for _, tt := range tests {
+		if got := lo.Unique(tt.array); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Unique() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestFirst(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		array []interface{}
+		// Expected results.
+		want interface{}
+	}{
+		{"First element of collection", []interface{}{3, 4}, 3},
+	}
+	for _, tt := range tests {
+		if got := lo.First(tt.array); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. First() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestLast(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		array []interface{}
+		// Expected results.
+		want interface{}
+	}{
+		{"Last element of collection", []interface{}{3, 4}, 4},
+	}
+	for _, tt := range tests {
+		if got := lo.Last(tt.array); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Last() = %v, want %v", tt.name, got, tt.want)
+		}
 	}
 }
 
 func TestZip(t *testing.T) {
-	//	t.Skip()
-	type fixture struct {
-		arguments []a.ArrayInterface
-		expected  a.ArrayInterface
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		arrays [][]interface{}
+		// Expected results.
+		want []interface{}
+	}{
+	// TODO: Add test cases.
 	}
-
-	fixtures := []*fixture{
-		&fixture{
-			[]a.ArrayInterface{
-				a.New("fred", "barney"),
-				a.New(30, 40),
-				a.New(true, false),
-			},
-			a.New(
-				a.New("fred", 30, true),
-				a.New("barney", 40, false),
-			),
-		},
-	}
-	for _, fix := range fixtures {
-		ZipFunction := reflect.ValueOf(Zip)
-		var values []reflect.Value
-
-		for _, argument := range fix.arguments {
-			values = append(values, reflect.ValueOf(argument))
+	for _, tt := range tests {
+		if got := lo.Zip(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Zip() = %v, want %v", tt.name, got, tt.want)
 		}
-
-		result := ZipFunction.Call(values)[0]
-		fix.expected.ForEach(func(el interface{}, i int) {
-			expected := el.(a.ArrayInterface)
-			result := result.Interface().(a.ArrayInterface).At(i).(a.ArrayInterface)
-			Expect(Equal(result, expected), t).toEqual(true)
-		})
 	}
 }
 
 func TestEqual(t *testing.T) {
-	type fixture struct {
-		arrays   []a.ArrayInterface
-		expected bool
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		arrays [][]interface{}
+		// Expected results.
+		want bool
+	}{
+		{"Array are equals", [][]interface{}{{1, 2}, {1, 2}, {1, 2}}, true},
 	}
-	sample := &struct{ i int }{1}
-	number := 2
-	fixtures := []*fixture{
-		&fixture{
-			[]a.ArrayInterface{a.New("a", "b"), a.New(1, "b"), a.New("a", "b")},
-			false,
-		},
-		&fixture{
-			[]a.ArrayInterface{},
-			true,
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New("a", "b")},
-			true,
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New("a", "b"), a.New("a", "b")},
-			true,
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New(1, 2, 3), a.New(1, 2, 3), a.New(1, 2, 3)},
-			true,
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New(1, nil, 3), a.New(1, nil, 3)},
-			true,
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New(sample), a.New(sample)},
-			true,
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New(*sample), a.New(*sample)},
-			true,
-		},
-		&fixture{
-			[]a.ArrayInterface{a.New(&number), a.New(&number)},
-			true,
-		},
+	for _, tt := range tests {
+		if got := lo.Equal(tt.arrays...); got != tt.want {
+			t.Errorf("%q. Equal() = %v, want %v", tt.name, got, tt.want)
+		}
 	}
-	for _, fix := range fixtures {
-		Expect(Equal(fix.arrays...), t).toEqual(fix.expected)
+}
+
+func TestCompact(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		array []interface{}
+		// Expected results.
+		want []interface{}
+	}{
+		{"Remove nil values", []interface{}{0, nil, 2, nil}, []interface{}{0, 2}},
+	}
+	for _, tt := range tests {
+		if got := lo.Compact(tt.array); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Compact() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestFilter(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		collection []interface{}
+		predicate  func(interface{}, int, []interface{}) bool
+		// Expected results.
+		want []interface{}
+	}{
+		{"Filter even numbers", []interface{}{1, 2, 3, 4}, func(element interface{}, index int, collection []interface{}) bool {
+			return element.(int)%2 == 0
+		}, []interface{}{2, 4}},
+	}
+	for _, tt := range tests {
+		if got := lo.Filter(tt.collection, tt.predicate); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%q. Filter() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestIndexOf(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		collection []interface{}
+		element    interface{}
+		index      int
+		// Expected results.
+		want int
+	}{
+		{"", []interface{}{1, 2, 3}, 3, 0, 2},
+	}
+	for _, tt := range tests {
+		if got := lo.IndexOf(tt.collection, tt.element, tt.index); got != tt.want {
+			t.Errorf("%q. IndexOf() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestForEach(t *testing.T) {
+	tests := []struct {
+		// Test description.
+		name string
+		// Parameters.
+		collection []interface{}
+		handler    func(interface{}, int, []interface{})
+	}{
+		{"", []interface{}{1, 2, 3, 4}, func(element interface{}, i int, collection []interface{}) { _ = element.(int) }},
+	}
+	for _, tt := range tests {
+		lo.ForEach(tt.collection, tt.handler)
 	}
 }
