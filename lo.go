@@ -4,6 +4,11 @@
 
 package lo
 
+import (
+	"fmt"
+	"reflect"
+)
+
 // Chunk Creates an array of elements split into groups the length of size. If collection can’t be split evenly, the final chunk will be the remaining elements.
 func Chunk(collection []interface{}, length int) []interface{} {
 	result := []interface{}{}
@@ -191,4 +196,91 @@ func ForEach(collection []interface{}, handler func(interface{}, int, []interfac
 	for index, value := range collection {
 		handler(value, index, collection)
 	}
+}
+
+// Reduce returns a value from an array by applying a reducer function to each element of an array. That value can be anything
+func Reduce(collection Collection, handler Function, initial Any, resultPointer Pointer) error {
+	collectionValue := reflect.Indirect(reflect.ValueOf(collection))
+	if collectionValue.Kind() != reflect.Slice && collectionValue.Kind() != reflect.Array {
+		return NotASlice("Collection '%v' is not a slice")
+	}
+	handlerValue := reflect.ValueOf(handler)
+	if handlerValue.Kind() != reflect.Func {
+		return NotAFunction("Function '%v' is not a function", handler)
+	}
+
+	returnValue := reflect.ValueOf(initial)
+	numberOfParameters := handlerValue.Type().NumIn()
+	for i := 0; i < collectionValue.Len(); i++ {
+		switch {
+		case numberOfParameters == 2:
+			returnValues := handlerValue.Call([]reflect.Value{returnValue, collectionValue.Index(i)})
+			returnValue = returnValues[0]
+		case numberOfParameters == 3:
+			returnValues := handlerValue.Call([]reflect.Value{returnValue, collectionValue.Index(i), reflect.ValueOf(i)})
+			returnValue = returnValues[0]
+		case numberOfParameters == 4:
+			returnValues := handlerValue.Call([]reflect.Value{returnValue, collectionValue.Index(i), reflect.ValueOf(i), collectionValue})
+			returnValue = returnValues[0]
+		}
+	}
+	resultPointerValue := reflect.ValueOf(resultPointer)
+	if resultPointerValue.Kind() != reflect.Ptr {
+		return NotAPointer("Result '%v' not a pointer", resultPointer)
+	}
+	if resultPointerValue.Elem().Type().AssignableTo(returnValue.Type()) {
+		resultPointerValue.Elem().Set(returnValue)
+	} else if returnValue.Type().ConvertibleTo(resultPointerValue.Elem().Type()) {
+		resultPointerValue.Elem().Set(returnValue.Convert(resultPointerValue.Elem().Type()))
+	} else {
+		return NotAssignable("Can't assign value '%v' to pointer of value '%v'", returnValue.Interface(), resultPointer)
+	}
+	return nil
+}
+
+type Collection interface{}
+
+type Function interface{}
+
+type Any interface{}
+
+type Pointer interface{}
+
+func NotASlice(format string, arguments ...interface{}) NotASliceError {
+	return NotASliceError(fmt.Sprintf(format, arguments...))
+}
+
+type NotASliceError string
+
+func (err NotASliceError) Error() string {
+	return string(err)
+}
+
+func NotAFunction(format string, arguments ...interface{}) NotAFunctionError {
+	return NotAFunctionError(fmt.Sprintf(format, arguments...))
+}
+
+type NotAFunctionError string
+
+func (err NotAFunctionError) Error() string {
+	return string(err)
+}
+
+func NotAPointer(format string, arguments ...interface{}) NotAPointerError {
+	return NotAPointerError(fmt.Sprintf(format, arguments...))
+}
+
+type NotAPointerError string
+
+func (err NotAPointerError) Error() string {
+	return string(err)
+}
+func NotAssignable(format string, arguments ...interface{}) NotAssignableError {
+	return NotAssignableError(fmt.Sprintf(format, arguments...))
+}
+
+type NotAssignableError string
+
+func (err NotAssignableError) Error() string {
+	return string(err)
 }

@@ -1,10 +1,12 @@
 package lo_test
 
 import (
+
 	//"github.com/interactiv/expect"
-	"github.com/mparaiso/lodash-go"
 	"reflect"
 	"testing"
+
+	"github.com/mparaiso/lodash-go"
 )
 
 func TestChunk(t *testing.T) {
@@ -305,5 +307,56 @@ func TestForEach(t *testing.T) {
 	}
 	for _, tt := range tests {
 		lo.ForEach(tt.collection, tt.handler)
+	}
+}
+
+func TestReduce(t *testing.T) {
+	type Args struct {
+		Collection interface{}
+		Function   interface{}
+		Initial    interface{}
+		Expected   interface{}
+		Result     interface{}
+		Label      string
+	}
+	t.Log("TestReduce Valid arguments")
+	for _, test := range []Args{
+		{[]int{1, 2, 3, 4}, func(result int, element int) int { return result + element }, 0, 10, 0, "Sum"},
+		{[]string{"a", "b", "c", "d", "e"}, func(result string, element string, index int) string { return element + result }, "", "edcba", "", "Concat"},
+		{[]int{10, 20, 30}, func(result int, element int, index int, collection []int) int {
+			if l := len(collection); l-1 == index {
+				return (result + element) / l
+			} else {
+				return result + element
+			}
+		}, 0, 20, 0, "average"},
+	} {
+		t.Logf("\t%s", test.Label)
+
+		err := lo.Reduce(test.Collection, test.Function, test.Initial, &test.Result)
+		if err != nil {
+			t.Fatalf("\t\tError should be nil,got '%s'", err)
+		}
+		if test.Result != test.Expected {
+			t.Fatalf("\t\tResult should be '%#v', got '%#v'", test.Expected, test.Result)
+		}
+	}
+	t.Log("Test Reduce Invalid arguments")
+	for _, test := range []Args{
+		{"", func() {}, "", reflect.TypeOf(lo.NotASlice("")), nil, "NotASliceError"},
+		{[8]byte{}, 1, "", reflect.TypeOf(lo.NotAFunction("")), nil, "NotAFunctionError"},
+		{[]int{}, func(result int, element int) int { return result }, 0, reflect.TypeOf(lo.NotAPointer("")), 0, "NotAPointer"},
+		{[]int{1, 2, 3}, func(result int, element int) int { return result }, 0, reflect.TypeOf(lo.NotAssignable("")), &struct{}{}, "NotAssignableError"},
+	} {
+		t.Logf("\t%s", test.Label)
+
+		err := lo.Reduce(test.Collection, test.Function, test.Initial, test.Result)
+		// t.Log("\t%#v", test.Result, err)
+		if err == nil {
+			t.Fatalf("\t\tError %#v should not be nil", err)
+		}
+		if actual := reflect.TypeOf(err); actual != test.Expected {
+			t.Fatalf("\t\tError should be of type '%v' , got %v", test.Expected, actual)
+		}
 	}
 }
