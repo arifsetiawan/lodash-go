@@ -34,6 +34,68 @@ lo is coded in Go.
 	
 ### Examples
 
+#### Map Filter Reduce to compute an Order
+
+```go
+
+	package main
+	
+	import(
+		"fmt"
+		"github.com/Mparaiso/lodash-go"
+	)
+	
+	func Main(){
+		var total int
+		type Order struct{
+			Product string
+			Quantity int
+			UnitPrice int
+		}
+		orders:=[]Order{
+			{"Iphone", 2, 500}, 
+			{"Graphic card", 1, 250}, 
+			{"Flat screen", 3, 600}, 
+			{"Ipad air", 5, 200},
+		}
+		err:=lo.In(orders).
+			Map(func(order Order,index int)int{
+				return order.Quantity * order.UnitPrice
+			}).
+			Reduce(func(total int,subtotal int)int{
+				return total + subtotal
+			},0).
+			Out(total)
+			
+		fmt.Print(err,total)
+		
+		// Output:
+		// <nil> 4050
+	}
+```
+
+#### Difference between 2 slices
+	
+```go
+	package main
+	
+	import(
+		"fmt"
+		"github.com/Mparaiso/lodash-go"
+	)
+	
+	func Main(){
+	
+		var difference []string
+		err := lo.Difference([]string{"a", "b", "c", "d"}, []string{"a", "c", "x"}, &difference)
+		fmt.Println(err)
+		fmt.Println(difference)
+		
+		// Output:
+		// <nil>
+		// [b d]
+	}
+```	
 #### Filter out odd numbers
 
 ```go
@@ -41,7 +103,7 @@ lo is coded in Go.
 	
 	import(
 		"fmt"
-		"github.com"/mparaiso/lodash-go"
+		"github.com/mparaiso/lodash-go"
 	)
 	
 	func Main(){
