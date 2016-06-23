@@ -1,10 +1,10 @@
 #lo
 
-#### author: Mparaiso <mparaiso@online.fr>
+##### author: Mparaiso <mparaiso@online.fr>
 
-#### copyrights 2015 Mparaiso
+##### copyrights 2015 Mparaiso
 
-#### license: Apache License 2.0
+##### license: Apache License 2.0
 
 [![Build Status](https://travis-ci.org/Mparaiso/lodash-go.svg?branch=master)](https://travis-ci.org/Mparaiso/lodash-go)
 [![GoDoc](https://godoc.org/github.com/Mparaiso/lodash-go?status.svg)](https://godoc.org/github.com/Mparaiso/lodash-go)
