@@ -47,7 +47,7 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 	package main
 	
 	import "github.com/mparaiso/lodash-go" 
-	import "fmt
+	import "fmt"
 	
 	func Main(){
 		// Group people by country
