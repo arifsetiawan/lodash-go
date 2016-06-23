@@ -14,6 +14,8 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 	
 ###Examples:
 
+####Grouping adults by country using a pipeline
+
 	import "github.com/mparaiso/lodash-go" 
 	import "fmt
 	
@@ -39,8 +41,8 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 			Reduce(func(list map[string]int, person Person) map[string]int {
 				list[person.Country] = list[person.Country] + 1
 				return list
-	    }, map[string]int{}).
-		Out(&adultPeopleByCountry)
+			}, map[string]int{}).
+			Out(&adultPeopleByCountry)
 		
 		fmt.Println(err)
 		fmt.Println(adultPeopleByCountry["France"])
