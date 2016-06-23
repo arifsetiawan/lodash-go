@@ -16,12 +16,12 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 
 #### Compute the mean of an array of integers
 	
-	```go
+```go
 	package main
-	
+
 	import "github.com/Mparaiso/lodash-go"
 	import "fmt"
-	
+		
 	func Main(){
 		var mean int
 		err := lo.Reduce([]int{10, 20, 30}, func(result int, element int, index int, collection []int) int {
@@ -39,7 +39,7 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 		// 20
 		// <nil>
 	}
-	```
+```
 		
 #### Grouping adults by country using a pipeline
 
