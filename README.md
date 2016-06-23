@@ -15,14 +15,14 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 
 ### Implemented functions 
 
-	- [x] Map
-	- [x] Reduce
-	- [x] Filter
-	- [x] Union
-	- [x] Intersection
-	- [x] Xor
-	- [x] Difference
-	- [x] IndexOf
+- [x] Map
+- [x] Reduce
+- [x] Filter
+- [x] Union
+- [x] Intersection
+- [x] Xor
+- [x] Difference
+- [x] IndexOf
 	
 ### Examples
 
