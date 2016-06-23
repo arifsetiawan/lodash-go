@@ -10,185 +10,310 @@ import (
 )
 
 // Chunk Creates an array of elements split into groups the length of size. If collection can’t be split evenly, the final chunk will be the remaining elements.
-func Chunk(collection []interface{}, length int) []interface{} {
-	result := []interface{}{}
-	if length <= 0 {
-		return result
-	}
-	temp := collection[:]
-	for len(temp) > 0 {
-		a := []interface{}{}
-		for i := 0; i < length && i <= len(temp); i++ {
-			// a.Push(temp.Shift())
-			a = append(a, temp[:1]...)
-			temp = temp[1:]
-		}
-		result = append(result, a)
-	}
-	return result
-}
+//func Chunk(collection []interface{}, length int) []interface{} {
+//	result := []interface{}{}
+//	if length <= 0 {
+//		return result
+//	}
+//	temp := collection[:]
+//	for len(temp) > 0 {
+//		a := []interface{}{}
+//		for i := 0; i < length && i <= len(temp); i++ {
+//			// a.Push(temp.Shift())
+//			a = append(a, temp[:1]...)
+//			temp = temp[1:]
+//		}
+//		result = append(result, a)
+//	}
+//	return result
+//}
 
 // Difference creates an array excluding all provided values
-func Difference(array []interface{}, values []interface{}) []interface{} {
-	return Filter(array, func(el interface{}, i int, array []interface{}) bool {
-		return IndexOf(values, el, 0) == -1
-	})
-}
-
-// Without creates an array excluding all provided values
-func Without(array []interface{}, values ...interface{}) []interface{} {
-	return Difference(array, values)
+func Difference(in Collection, values Collection, out Collection) error {
+	return Filter(in, func(el interface{}, i int, in Collection) (bool, error) {
+		index, err := IndexOf(values, el, 0)
+		return index == -1, err
+	}, out)
 }
 
 // Intersection creates an array of unique values in all provided arrays
-func Intersection(arrays ...[]interface{}) []interface{} {
-	switch len(arrays) {
-	case 0:
-		return []interface{}{}
-	case 1:
-		return Unique(arrays[0])
-	case 2:
-		u := Unique(arrays[1])
-		a := Unique(arrays[0])
-		return Filter(a, func(el interface{}, i int, a []interface{}) bool {
-			return IndexOf(u, el, 0) >= 0
-		})
+func Intersection(in Collection, values Collection, out Collection) error {
+	if err := Unique(in, &in); err != nil {
+		return err
 	}
-	return Intersection(append([][]interface{}{Intersection(arrays[0], arrays[1])}, arrays[2:]...)...)
+	if err := Unique(values, &values); err != nil {
+		return err
+	}
+	return Filter(in, func(el interface{}, i int) (bool, error) {
+		index, err := IndexOf(values, el, 0)
+		return index >= 0, err
+	}, out)
 }
+
+// Without creates an array excluding all provided values
+//func Without(array []interface{}, values ...interface{}) []interface{} {
+//	return Difference(array, values)
+//}
+
+// Intersection creates an array of unique values in all provided arrays
+//func Intersection(arrays ...[]interface{}) []interface{} {
+//	switch len(arrays) {
+//	case 0:
+//		return []interface{}{}
+//	case 1:
+//		return Unique(arrays[0])
+//	case 2:
+//		u := Unique(arrays[1])
+//		a := Unique(arrays[0])
+//		return Filter(a, func(el interface{}, i int, a []interface{}) bool {
+//			return IndexOf(u, el, 0) >= 0
+//		}, nil)
+//	}
+//	return Intersection(append([][]interface{}{Intersection(arrays[0], arrays[1])}, arrays[2:]...)...)
+//}
 
 // Xor creates an array that is the symmetric difference of the provided arrays.
-func Xor(arrays ...[]interface{}) []interface{} {
-	switch len(arrays) {
-	case 0:
-		return []interface{}{}
-	case 1:
-		return Unique(arrays[0])
-	case 2:
-		return append(Difference(Unique(arrays[0]), Unique(arrays[1])), Difference(Unique(arrays[1]), Unique(arrays[0]))...)
+//func Xor(arrays ...[]interface{}) []interface{} {
+//	switch len(arrays) {
+//	case 0:
+//		return []interface{}{}
+//	case 1:
+//		return Unique(arrays[0])
+//	case 2:
+//		return append(Difference(Unique(arrays[0]), Unique(arrays[1])), Difference(Unique(arrays[1]), Unique(arrays[0]))...)
 
-	}
-	return Xor(append([][]interface{}{Xor(arrays[0], arrays[1])}, arrays[2:]...)...)
-}
+//	}
+//	return Xor(append([][]interface{}{Xor(arrays[0], arrays[1])}, arrays[2:]...)...)
+//}
 
-// LastIndexOf returns the index of a value in the array from its end, returns -1 if not found
-func LastIndexOf(array []interface{}, value interface{}, fromIndex int) int {
-	switch {
-	case fromIndex >= (len(array) - 1):
-	case fromIndex < 0:
-	default:
-		for i := len(array) - 1; i >= 0; i-- {
-			if value == array[i] {
-				return i
-			}
-		}
-	}
-	return -1
-}
+//// LastIndexOf returns the index of a value in the array from its end, returns -1 if not found
+//func LastIndexOf(array []interface{}, value interface{}, fromIndex int) int {
+//	switch {
+//	case fromIndex >= (len(array) - 1):
+//	case fromIndex < 0:
+//	default:
+//		for i := len(array) - 1; i >= 0; i-- {
+//			if value == array[i] {
+//				return i
+//			}
+//		}
+//	}
+//	return -1
+//}
 
-// Union returns an array filled by all unique values of the arrays
-func Union(arrays ...[]interface{}) []interface{} {
-	result := []interface{}{}
-	for _, array := range arrays {
-		ForEach(array, func(el interface{}, i int, array []interface{}) {
-			if IndexOf(result, el, 0) == -1 {
-				result = append(result, el)
-			}
-		})
-	}
-	return result
-}
+//// Union returns an array filled by all unique values of the arrays
+//func Union(arrays ...[]interface{}) []interface{} {
+//	result := []interface{}{}
+//	for _, array := range arrays {
+//		ForEach(array, func(el interface{}, i int, array []interface{}) {
+//			if IndexOf(result, el, 0) == -1 {
+//				result = append(result, el)
+//			}
+//		})
+//	}
+//	return result
+//}
 
 // Unique filters remove duplicate values from an array
-func Unique(array []interface{}) []interface{} {
-	res := []interface{}{}
-	ForEach(array, func(val interface{}, i int, array []interface{}) {
-		if IndexOf(res, val, 0) == -1 {
-			res = append(res, val)
+func Unique(in Collection, out Pointer) error {
+	if !IsCollection(in) {
+		return NotACollection("Value '%v' is not a collection", in)
+	}
+	if !IsPointer(out) {
+		return NotPointer("Value '%v' is not a pointer", out)
+	}
+	inValue := reflect.ValueOf(in)
+	inType := inValue.Type()
+	outValue := reflect.ValueOf(out)
+	outType := outValue.Type()
+	if !inType.AssignableTo(outType.Elem()) {
+		return NotAssignable("Value in of type '%v' can't be assigned to out  of type '%v' ", inType, outType.Elem())
+	}
+	newCollection := reflect.MakeSlice(inType, 0, 0)
+	inLen := inValue.Len()
+	for i := 0; i < inLen; i++ {
+		if index, err := IndexOf(newCollection.Interface(), inValue.Index(i).Interface(), 0); err != nil {
+			return err
+		} else if index == -1 {
+			newCollection = reflect.Append(newCollection, inValue.Index(i))
 		}
-	})
-	return res
-}
 
-// First returns the first element of an array
-func First(array []interface{}) interface{} {
-	return array[0]
-}
-
-// Last returns the last element of an array
-func Last(array []interface{}) interface{} {
-	return array[len(array)-1]
-}
-
-// Zip zips an array
-func Zip(arrays ...[]interface{}) []interface{} {
-	result := []interface{}{}
-	switch len(arrays) {
-	case 0:
-		return result
-	case 1:
-		return arrays[0][:]
-	default:
-		ForEach(arrays[0], func(el interface{}, i int, array []interface{}) {
-			a := []interface{}{}
-			for val := range arrays {
-				a = append(array, val)
-			}
-			result = append(result, a)
-		})
 	}
-	return result
+	outValue.Elem().Set(newCollection)
+	return nil
 }
 
-// Equal compares arrays elements , return true if arrays are equal
-func Equal(arrays ...[]interface{}) bool {
-	switch len(arrays) {
-	case 0, 1:
-		return true
-	case 2:
-		return len(Difference(arrays[0], arrays[1])) == 0
-	default:
-		return Equal(arrays[0], arrays[1]) && Equal(arrays[2:]...)
-	}
+//// First returns the first element of an array
+//func First(array []interface{}) interface{} {
+//	return array[0]
+//}
+
+//// Last returns the last element of an array
+//func Last(array []interface{}) interface{} {
+//	return array[len(array)-1]
+//}
+
+//// Zip zips an array
+//func Zip(arrays ...[]interface{}) []interface{} {
+//	result := []interface{}{}
+//	switch len(arrays) {
+//	case 0:
+//		return result
+//	case 1:
+//		return arrays[0][:]
+//	default:
+//		ForEach(arrays[0], func(el interface{}, i int, array []interface{}) {
+//			a := []interface{}{}
+//			for val := range arrays {
+//				a = append(array, val)
+//			}
+//			result = append(result, a)
+//		})
+//	}
+//	return result
+//}
+
+type Pipeline struct {
+	Value Any
+	Queue []func() error
 }
 
-// Compact remove nil values from array
-func Compact(array []interface{}) []interface{} {
-	return Filter(array, func(el interface{}, i int, array []interface{}) bool {
-		return el != nil
+func In(collection Collection) *Pipeline {
+	return &Pipeline{collection, []func() error{}}
+}
+
+func (pipeline *Pipeline) Map(function Function) *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Map(pipeline.Value, function, &pipeline.Value)
 	})
+	return pipeline
+}
 
+func (pipeline *Pipeline) Reduce(function Function, initial Any) *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Reduce(pipeline.Value, function, initial, &pipeline.Value)
+	})
+	return pipeline
+}
+
+func (pipeline *Pipeline) Filter(predicate Function) *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Filter(pipeline.Value, predicate, &pipeline.Value)
+	})
+	return pipeline
+}
+
+func (pipeline *Pipeline) Unique() *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Unique(pipeline.Value, &pipeline.Value)
+	})
+	return pipeline
+}
+
+func (pipeline *Pipeline) Intersection(values Collection) *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Intersection(pipeline.Value, values, &pipeline.Value)
+	})
+	return pipeline
+}
+
+func (pipeline *Pipeline) Difference(collection Collection) *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Difference(pipeline.Value, collection, &pipeline.Value)
+	})
+	return pipeline
+}
+
+func (pipeline *Pipeline) Out(out Pointer) error {
+	if !IsPointer(out) {
+		return NotPointer("Value '%s' is not a pointer", out)
+	}
+	for _, operation := range pipeline.Queue {
+		if err := operation(); err != nil {
+			return err
+		}
+	}
+	outValue := reflect.ValueOf(out)
+	outType := outValue.Type()
+	v := reflect.ValueOf(pipeline.Value)
+	vType := v.Type()
+	if !vType.AssignableTo(outType.Elem()) {
+		return NotAssignable("Value of type '%s' is not assignable to out value type '%s'", vType, outType)
+	}
+	outValue.Elem().Set(v)
+	return nil
 }
 
 // Filter iterates over elements of collection
 // returning an array of all elements predicate returns truthy for.
 // The predicate is invoked with three arguments: (value, index|key, collection).
 
-func Filter(collection []interface{}, predicate func(interface{}, int, []interface{}) bool) []interface{} {
-	result := []interface{}{}
-	for index, value := range collection {
-		if predicate(value, index, collection) {
-			result = append(result, value)
+func Filter(in Collection, predicate Function, out Pointer) error {
+	if !IsCollection(in) {
+		return NotACollection("Value '%v' is not a collection ", in)
+	}
+	if !IsFunction(predicate) {
+		return NotAFunction("Value '%v' is not a function", predicate)
+	}
+	if !IsPointer(out) {
+		return NotPointer("Value '%v' is not a pointer", out)
+	}
+	inValue := reflect.Indirect(reflect.ValueOf(in))
+	inType := inValue.Type()
+	predicateValue := reflect.ValueOf(predicate)
+	predicateType := predicateValue.Type()
+	numIn := predicateType.NumIn()
+	numOut := predicateType.NumOut()
+	outValue := reflect.ValueOf(out)
+	resultValue := reflect.MakeSlice(inType, 0, 0)
+	if a, b := resultValue.Type(), outValue.Elem().Type(); !a.AssignableTo(b) {
+		return NotAssignable("Value of type '%v' is not assignable to out value of type '%v'", a, b)
+	}
+	for i := 0; i < inValue.Len(); i++ {
+		var results []reflect.Value
+		elementValue := inValue.Index(i)
+		iValue := reflect.ValueOf(i)
+		switch numIn {
+		case 1:
+			results = predicateValue.Call([]reflect.Value{elementValue})
+		case 2:
+			results = predicateValue.Call([]reflect.Value{elementValue, iValue})
+		case 3:
+			results = predicateValue.Call([]reflect.Value{elementValue, iValue, inValue})
+		}
+		if numOut == 2 {
+			if err, ok := results[1].Interface().(error); ok {
+				return err
+			}
+		}
+		if results[0].Bool() {
+
+			resultValue = reflect.Append(resultValue, elementValue)
 		}
 	}
-	return result
+	outValue.Elem().Set(resultValue)
+	return nil
 }
 
 // IndexOf returns the index of a value in the array from its begining, returns -1 if not found
-
-func IndexOf(collection []interface{}, element interface{}, index int) int {
-	if index >= len(collection) {
-		return -1
+func IndexOf(collection Collection, element Any, start int) (int, error) {
+	if !IsCollection(collection) {
+		return 0, NotACollection("Value '%v' is not a collecion ", collection)
 	}
-	if index < 0 {
-		index = 0
+	collectionValue := reflect.ValueOf(collection)
+	collectionLen := collectionValue.Len()
+	if start >= collectionLen {
+		return -1, nil
 	}
-	for i := index; i < len(collection); i++ {
-		if collection[i] == element {
-			return i
+	if start < 0 {
+		start = 0
+	}
+	for i := start; i < collectionLen; i++ {
+		if collectionValue.Index(i).Interface() == element {
+			return i, nil
 		}
 	}
-	return -1
+	return -1, nil
 }
 
 // ForEach executes handler on each element of the collection
@@ -198,11 +323,69 @@ func ForEach(collection []interface{}, handler func(interface{}, int, []interfac
 	}
 }
 
+// Map maps a collection to a result by passing each element of the collection
+// to a function
+func Map(collection Collection, function Function, result Pointer) error {
+	if !IsCollection(collection) {
+		return NotACollection("Value '%v' is not a collection", collection)
+	}
+	if !IsFunction(function) {
+		return NotAFunction("Value '%v' is not a function", function)
+	}
+	if !IsPointer(result) {
+		return NotPointer("Value '%v' is not a pointer", result)
+	}
+	functionValue := reflect.ValueOf(function)
+	functionType := functionValue.Type()
+	numIn := functionType.NumIn()
+	if numIn < 1 || numIn > 3 {
+		return IncorrectInputParameterArity("Function '%s' input parameter arity should be greater than 0 or lower than 4 , got '%d' ", functionType, numIn)
+	}
+	numOut := functionType.NumOut()
+	if numOut < 1 || numOut > 2 {
+		return IncorrectInputParameterArity("Function '%s' output parameter arity should be greater than 0 or lower than 3 , got '%d' ", functionType, numOut)
+	}
+	if numOut == 2 {
+		if a, b := functionType.Out(1), reflect.TypeOf((*error)(nil)).Elem(); !a.AssignableTo(b) {
+			return IncorrectOutputParameterType("Type '%s' of output parameter 2 should be an error interface, got '%s'", a)
+		}
+	}
+	collectionValue := reflect.Indirect(reflect.ValueOf(collection))
+	// collectionType := collectionValue.Type()
+	resultValue := reflect.ValueOf(result)
+	resultType := resultValue.Type()
+	sliceOfCollectionElementType := reflect.SliceOf(functionType.Out(0))
+	newCollectionValue := reflect.MakeSlice(sliceOfCollectionElementType, 0, 0)
+	if !newCollectionValue.Type().AssignableTo(sliceOfCollectionElementType) {
+		return NotAssignable("Type '%s' is not assignable to return type '%s'", sliceOfCollectionElementType, resultType)
+	}
+	for i := 0; i < collectionValue.Len(); i++ {
+		var resultValues []reflect.Value
+		switch numIn {
+		case 1:
+			resultValues = functionValue.Call([]reflect.Value{collectionValue.Index(i)})
+
+		case 2:
+			resultValues = functionValue.Call([]reflect.Value{collectionValue.Index(i), reflect.ValueOf(i)})
+		case 3:
+			resultValues = functionValue.Call([]reflect.Value{collectionValue.Index(i), reflect.ValueOf(i), collectionValue})
+		}
+		if numOut == 2 {
+			if err := resultValues[1]; !err.IsNil() {
+				return err.Interface().(error)
+			}
+		}
+		newCollectionValue = reflect.Append(newCollectionValue, resultValues[0])
+	}
+	resultValue.Elem().Set(newCollectionValue)
+	return nil
+}
+
 // Reduce returns a value from an array by applying a reducer function to each element of an array. That value can be anything
 func Reduce(collection Collection, function Function, initial Any, resultPointer Pointer) error {
 	collectionValue := reflect.Indirect(reflect.ValueOf(collection))
 	if collectionValue.Kind() != reflect.Slice && collectionValue.Kind() != reflect.Array {
-		return NotASlice("Collection '%v' is not a slice")
+		return NotACollection("Collection '%v' is not a slice")
 	}
 	collectionType := collectionValue.Type()
 	if !IsFunction(function) {
@@ -271,7 +454,7 @@ func Reduce(collection Collection, function Function, initial Any, resultPointer
 	}
 	resultPointerValue := reflect.ValueOf(resultPointer)
 	if resultPointerValue.Kind() != reflect.Ptr {
-		return NotAPointer("Result '%v' not a pointer", resultPointer)
+		return NotPointer("Result '%v' not a pointer", resultPointer)
 	}
 	if resultPointerValue.Elem().Type().AssignableTo(returnValue.Type()) {
 		resultPointerValue.Elem().Set(returnValue)
@@ -288,6 +471,19 @@ type Collection interface{}
 // Function is purely semantic
 type Function interface{}
 
+// Any is purely semantic
+type Any interface{}
+
+// Pointer is purely semantic
+type Pointer interface{}
+
+func IsPointer(value Any) bool {
+	if reflect.ValueOf(value).Kind() != reflect.Ptr {
+		return false
+	}
+	return true
+}
+
 // IsFunction returns true if f is a function
 func IsFunction(f Function) bool {
 	if reflect.ValueOf(f).Kind() != reflect.Func {
@@ -296,22 +492,23 @@ func IsFunction(f Function) bool {
 	return true
 }
 
-// Any is purely semantic
-type Any interface{}
-
-// Pointer is purely semantic
-type Pointer interface{}
+func IsCollection(value Any) bool {
+	if k := reflect.ValueOf(value).Kind(); k == reflect.Slice || k == reflect.Array {
+		return true
+	}
+	return false
+}
 
 // NotASlice returns a NotASliceError
-func NotASlice(format string, arguments ...interface{}) NotASliceError {
-	return NotASliceError(fmt.Sprintf(format, arguments...))
+func NotACollection(format string, arguments ...interface{}) NotACollectionError {
+	return NotACollectionError(fmt.Sprintf(format, arguments...))
 }
 
 // NotASliceError signals that a value isn't a slice or an array
-type NotASliceError string
+type NotACollectionError string
 
 // Error returns a string
-func (err NotASliceError) Error() string {
+func (err NotACollectionError) Error() string {
 	return string(err)
 }
 
@@ -326,7 +523,7 @@ func (err NotAFunctionError) Error() string {
 	return string(err)
 }
 
-func NotAPointer(format string, arguments ...interface{}) NotAPointerError {
+func NotPointer(format string, arguments ...interface{}) NotAPointerError {
 	return NotAPointerError(fmt.Sprintf(format, arguments...))
 }
 
