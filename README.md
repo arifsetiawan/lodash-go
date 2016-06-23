@@ -51,14 +51,19 @@ lo is coded in Go.
 			Product string
 			Quantity int
 			UnitPrice int
+			InStock bool
 		}
 		orders:=[]Order{
-			{"Iphone", 2, 500}, 
-			{"Graphic card", 1, 250}, 
-			{"Flat screen", 3, 600}, 
-			{"Ipad air", 5, 200},
+			{"Iphone", 2, 500,true}, 
+			{"Graphic card", 1, 250,true}, 
+			{"Flat screen", 3, 600,true},
+			{"MacBook White",2,400,false},
+			{"Ipad air", 5, 200,true},
 		}
 		err:=lo.In(orders).
+			Filter(func(order Order)bool{
+				return order.InStock
+			}).
 			Map(func(order Order,index int)int{
 				return order.Quantity * order.UnitPrice
 			}).
