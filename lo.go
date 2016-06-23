@@ -199,30 +199,75 @@ func ForEach(collection []interface{}, handler func(interface{}, int, []interfac
 }
 
 // Reduce returns a value from an array by applying a reducer function to each element of an array. That value can be anything
-func Reduce(collection Collection, handler Function, initial Any, resultPointer Pointer) error {
+func Reduce(collection Collection, function Function, initial Any, resultPointer Pointer) error {
 	collectionValue := reflect.Indirect(reflect.ValueOf(collection))
 	if collectionValue.Kind() != reflect.Slice && collectionValue.Kind() != reflect.Array {
 		return NotASlice("Collection '%v' is not a slice")
 	}
-	handlerValue := reflect.ValueOf(handler)
-	if handlerValue.Kind() != reflect.Func {
-		return NotAFunction("Function '%v' is not a function", handler)
+	collectionType := collectionValue.Type()
+	if !IsFunction(function) {
+		return NotAFunction("Value '%v' is not a function", function)
+	}
+	functionValue := reflect.ValueOf(function)
+	functionType := functionValue.Type()
+	returnValue := reflect.ValueOf(initial)
+	numberInParameters := functionType.NumIn()
+	numberOutParameters := functionType.NumOut()
+	if numberInParameters < 2 || numberInParameters > 4 {
+		return IncorrectInputParameterArity("Incorrect input parameter arity, should >=2 or <=4, got %d", numberInParameters)
+	}
+	if numberOutParameters == 0 || numberOutParameters > 2 {
+		return IncorrectOutputParameterArity("Incorrect output paramater arity, should be > 0 or <=2, got %d ", numberOutParameters)
 	}
 
-	returnValue := reflect.ValueOf(initial)
-	numberOfParameters := handlerValue.Type().NumIn()
-	for i := 0; i < collectionValue.Len(); i++ {
-		switch {
-		case numberOfParameters == 2:
-			returnValues := handlerValue.Call([]reflect.Value{returnValue, collectionValue.Index(i)})
-			returnValue = returnValues[0]
-		case numberOfParameters == 3:
-			returnValues := handlerValue.Call([]reflect.Value{returnValue, collectionValue.Index(i), reflect.ValueOf(i)})
-			returnValue = returnValues[0]
-		case numberOfParameters == 4:
-			returnValues := handlerValue.Call([]reflect.Value{returnValue, collectionValue.Index(i), reflect.ValueOf(i), collectionValue})
-			returnValue = returnValues[0]
+	if numberInParameters == 2 {
+		if rt, ft := returnValue.Type(), functionType.In(0); rt != ft {
+			return IncorrectInputParameterType("Illegal parameter type for first parameter in function '%s',should be '#%v', got '#%v' ", functionType, rt, ft)
 		}
+		if cet, ft := collectionType.Elem(), functionType.In(1); cet != ft || !cet.AssignableTo(ft) {
+			return IncorrectInputParameterType("Illegal parameter type for second parameter in function '%s',should be '#%v', got '#%v' ", functionType, cet, ft)
+		}
+	}
+	if numberInParameters == 3 {
+		if indexType, parameterType := reflect.TypeOf(0), functionType.In(2); indexType != parameterType || !indexType.AssignableTo(parameterType) {
+			return IncorrectInputParameterType("Illegal parameter type for third parameter in function '%s',should be '#%v', got '#%v' ", functionType, indexType, parameterType)
+
+		}
+	}
+	if numberInParameters == 4 {
+		if parameterType := functionType.In(3); collectionType != parameterType || !collectionType.AssignableTo(parameterType) {
+			return IncorrectInputParameterType("Illegal parameter type for fourth parameter in function '%s',should be '#%v', got '#%v' ", functionType, collectionType, parameterType)
+
+		}
+	}
+
+	if numberOutParameters == 1 {
+		if rt, firstOutputParameterType := returnValue.Type(), functionType.Out(0); !rt.AssignableTo(firstOutputParameterType) {
+			return IncorrectOutputParameterType("Incorrect output parameter type for first output parameter in function '%s', should be '#%v', got '#%v'", functionType, rt, firstOutputParameterType)
+		}
+	}
+
+	if numberOutParameters == 2 {
+		if outParameter2Type, errorType := functionType.Out(1), reflect.TypeOf((*error)(nil)).Elem(); !outParameter2Type.Implements(errorType) {
+			return IncorrectOutputParameterType("Incorrect ouput paramater type for second output paramater in function '%s', should be '#%v', got '#%v'", functionType, errorType, outParameter2Type)
+		}
+	}
+	// Do iterate over the collection an reduce it
+	for i := 0; i < collectionValue.Len(); i++ {
+		var returnValues []reflect.Value
+		switch {
+		case numberInParameters == 2:
+			returnValues = functionValue.Call([]reflect.Value{returnValue, collectionValue.Index(i)})
+		case numberInParameters == 3:
+			returnValues = functionValue.Call([]reflect.Value{returnValue, collectionValue.Index(i), reflect.ValueOf(i)})
+		case numberInParameters == 4:
+			returnValues = functionValue.Call([]reflect.Value{returnValue, collectionValue.Index(i), reflect.ValueOf(i), collectionValue})
+		}
+		// on error return
+		if numberOutParameters == 2 && !returnValues[1].IsNil() {
+			return returnValues[1].Interface().(error)
+		}
+		returnValue = returnValues[0]
 	}
 	resultPointerValue := reflect.ValueOf(resultPointer)
 	if resultPointerValue.Kind() != reflect.Ptr {
@@ -240,18 +285,32 @@ func Reduce(collection Collection, handler Function, initial Any, resultPointer 
 
 type Collection interface{}
 
+// Function is purely semantic
 type Function interface{}
 
+// IsFunction returns true if f is a function
+func IsFunction(f Function) bool {
+	if reflect.ValueOf(f).Kind() != reflect.Func {
+		return false
+	}
+	return true
+}
+
+// Any is purely semantic
 type Any interface{}
 
+// Pointer is purely semantic
 type Pointer interface{}
 
+// NotASlice returns a NotASliceError
 func NotASlice(format string, arguments ...interface{}) NotASliceError {
 	return NotASliceError(fmt.Sprintf(format, arguments...))
 }
 
+// NotASliceError signals that a value isn't a slice or an array
 type NotASliceError string
 
+// Error returns a string
 func (err NotASliceError) Error() string {
 	return string(err)
 }
@@ -262,6 +321,7 @@ func NotAFunction(format string, arguments ...interface{}) NotAFunctionError {
 
 type NotAFunctionError string
 
+// Error returns a string
 func (err NotAFunctionError) Error() string {
 	return string(err)
 }
@@ -270,8 +330,11 @@ func NotAPointer(format string, arguments ...interface{}) NotAPointerError {
 	return NotAPointerError(fmt.Sprintf(format, arguments...))
 }
 
+// NotAPointerError is an error used to signal that a argument
+// passed to a function is not a pointer
 type NotAPointerError string
 
+// Error returns a string
 func (err NotAPointerError) Error() string {
 	return string(err)
 }
@@ -281,6 +344,57 @@ func NotAssignable(format string, arguments ...interface{}) NotAssignableError {
 
 type NotAssignableError string
 
+// Error returns a string
 func (err NotAssignableError) Error() string {
 	return string(err)
+}
+
+// IncorrectInputParameterType returns an IncorrectInputParameterTypeError
+func IncorrectInputParameterType(format string, arguments ...interface{}) IncorrectInputParameterTypeError {
+	return IncorrectInputParameterTypeError(fmt.Sprintf(format, arguments...))
+}
+
+// IncorrectInputParameterTypeError represent a error triggered when an input parameter passed to a function
+// is not the right type
+type IncorrectInputParameterTypeError string
+
+func (err IncorrectInputParameterTypeError) Error() string {
+	return string(err)
+}
+
+// IncorrectOutputParameterType returns an IncorrectOutputParameterTypeError
+func IncorrectOutputParameterType(format string, arguments ...interface{}) IncorrectOutputParameterTypeError {
+	return IncorrectOutputParameterTypeError(fmt.Sprintf(format, arguments...))
+}
+
+// IncorrectOutputParameterTypeError represent a error triggered when a value type is not of the same type
+// as an output paramater type
+type IncorrectOutputParameterTypeError string
+
+func (err IncorrectOutputParameterTypeError) Error() string {
+	return string(err)
+}
+
+func IncorrectInputParameterArity(format string, arguments ...interface{}) IncorrectInputParameterArityError {
+	return IncorrectInputParameterArityError(fmt.Sprintf(format, arguments...))
+}
+
+type IncorrectInputParameterArityError string
+
+func (err IncorrectInputParameterArityError) Error() string {
+	return string(err)
+}
+
+func IncorrectOutputParameterArity(format string, arguments ...interface{}) IncorrectOutputParameterArityError {
+	return IncorrectOutputParameterArityError(fmt.Sprintf(format, arguments...))
+}
+
+type IncorrectOutputParameterArityError string
+
+func (err IncorrectOutputParameterArityError) Error() string {
+	return string(err)
+}
+
+type ErrorInterface interface {
+	Error() string
 }

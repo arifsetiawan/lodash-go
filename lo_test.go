@@ -1,6 +1,7 @@
 package lo_test
 
 import (
+	"fmt"
 
 	//"github.com/interactiv/expect"
 	"reflect"
@@ -342,16 +343,24 @@ func TestReduce(t *testing.T) {
 		}
 	}
 	t.Log("Test Reduce Invalid arguments")
+	var illegalParameterType = reflect.TypeOf(lo.IncorrectInputParameterType(""))
+	var incorrectOutputParameterType = reflect.TypeOf(lo.IncorrectOutputParameterType(""))
 	for _, test := range []Args{
 		{"", func() {}, "", reflect.TypeOf(lo.NotASlice("")), nil, "NotASliceError"},
 		{[8]byte{}, 1, "", reflect.TypeOf(lo.NotAFunction("")), nil, "NotAFunctionError"},
 		{[]int{}, func(result int, element int) int { return result }, 0, reflect.TypeOf(lo.NotAPointer("")), 0, "NotAPointer"},
 		{[]int{1, 2, 3}, func(result int, element int) int { return result }, 0, reflect.TypeOf(lo.NotAssignable("")), &struct{}{}, "NotAssignableError"},
+		{[]int{1, 2, 3}, func(result string, element string) string { return result }, 0, illegalParameterType, nil, "IllegalParameterType first"},
+		{[]int{1, 2, 3}, func(result int, element string) int { return result }, 0, illegalParameterType, nil, "IllegalParameterType second"},
+		{[]int{}, func(result int, element int, index string) int { return result }, 0, illegalParameterType, nil, "IllegalParameterType third"},
+		{[]int{}, func(result int, element int, index int, collection []interface{}) int { return result }, 0, illegalParameterType, nil, "IllegalParameterType fourth"},
+		{[]int{}, func(result int, element int, index int, collection []int) string { return string(result) }, 0, incorrectOutputParameterType, nil, "IncorrectOutputParameterType first"},
+		{[]int{}, func(result int, element int, index int, collection []int) (int, int) { return result, 0 }, 0, incorrectOutputParameterType, nil, "IncorrectOutputParamaterType second"},
 	} {
 		t.Logf("\t%s", test.Label)
 
 		err := lo.Reduce(test.Collection, test.Function, test.Initial, test.Result)
-		// t.Log("\t%#v", test.Result, err)
+		t.Log(test.Result, err)
 		if err == nil {
 			t.Fatalf("\t\tError %#v should not be nil", err)
 		}
@@ -359,4 +368,31 @@ func TestReduce(t *testing.T) {
 			t.Fatalf("\t\tError should be of type '%v' , got %v", test.Expected, actual)
 		}
 	}
+
+}
+
+// ExampleReduce shows how to use lo.Reduce to compute the mean of an array of number
+func ExampleReduce() {
+	// Compute the mean of an array of integers
+	var mean int
+	err := lo.Reduce([]int{10, 20, 30}, func(result int, element int, index int, collection []int) int {
+		if l := len(collection); l-1 == index {
+			return (result + element) / l
+		} else {
+			return result + element
+		}
+	}, 0, &mean)
+	fmt.Println(mean)
+	fmt.Println(err)
+	// Output:
+	// 20
+	// <nil>
+}
+
+func ExampleReduce_second() {
+	// Comput the sum of an array of integers
+	var sum int
+	lo.Reduce([]int{1, 2, 3, 4}, func(result int, element int) int { return result + element }, 0, &sum)
+	fmt.Print(sum)
+	// Output: 10
 }
