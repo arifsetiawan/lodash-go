@@ -297,23 +297,34 @@ func TestIndexOf(t *testing.T) {
 	}
 }
 
-//func ExampleUnion() {
-//	// Compute the union of 2 slices
-//	var union []string
-//	err := lo.Union([]string{"a", "b", "c", "d", "e"},
-//		[]string{"a", "c", "g", "x", "e"},
-//		&union)
-//	fmt.Println(err)
-//	fmt.Println(union)
-//	// Output:
-//	// <nil>
-//	// [a c e]
+func ExampleXor() {
+	// Compute the symetrical difference between 2 collections of the same type
+	var xor []string
+	err := lo.Xor([]string{"a", "b", "c", "d"}, []string{"b", "c", "d", "e", "f"}, &xor)
+	fmt.Println(err)
+	fmt.Println(xor)
+	// Output:
+	// <nil>
+	// [a e f]
+}
 
-//}
+func ExampleUnion() {
+	// Compute the union of 2 slices
+	var union []string
+	err := lo.Union([]string{"a", "b", "c", "d", "e"},
+		[]string{"a", "c", "g", "x", "e"},
+		&union)
+	fmt.Println(err)
+	fmt.Println(union)
+	// Output:
+	// <nil>
+	// [a b c d e g x]
+
+}
 
 func ExampleDifference() {
 	var difference []string
-	err := lo.Difference([]string{"a", "b", "c", "d"}, []string{"a", "c"}, &difference)
+	err := lo.Difference([]string{"a", "b", "c", "d"}, []string{"a", "c", "x"}, &difference)
 	fmt.Println(err)
 	fmt.Println(difference)
 	// Output:

@@ -51,20 +51,19 @@ func Intersection(in Collection, values Collection, out Collection) error {
 }
 
 // Xor creates an array that is the symmetric difference of the provided arrays.
-//func Xor(arrays ...[]interface{}) []interface{} {
-//	switch len(arrays) {
-//	case 0:
-//		return []interface{}{}
-//	case 1:
-//		return Unique(arrays[0])
-//	case 2:
-//		return append(Difference(Unique(arrays[0]), Unique(arrays[1])), Difference(Unique(arrays[1]), Unique(arrays[0]))...)
+func Xor(in Collection, values Collection, out Pointer) error {
+	var unionResult interface{}
+	if err := Union(in, values, &unionResult); err != nil {
+		return err
+	}
+	var intersectionResult interface{}
+	if err := Intersection(in, values, &intersectionResult); err != nil {
+		return err
+	}
+	return Difference(unionResult, intersectionResult, out)
+}
 
-//	}
-//	return Xor(append([][]interface{}{Xor(arrays[0], arrays[1])}, arrays[2:]...)...)
-//}
-
-//// LastIndexOf returns the index of a value in the array from its end, returns -1 if not found
+// LastIndexOf returns the index of a value in the array from its end, returns -1 if not found
 //func LastIndexOf(array []interface{}, value interface{}, fromIndex int) int {
 //	switch {
 //	case fromIndex >= (len(array) - 1):
@@ -79,24 +78,35 @@ func Intersection(in Collection, values Collection, out Collection) error {
 //	return -1
 //}
 
-//// Union outputs a collection that holds values existing in both in and values collections
-//func Union(in Collection, values Collection, out Pointer) error {
-//	return Filter(in, func(element interface{}) (bool, error) {
-//		index, err := IndexOf(values, element, 0)
-//		return index >= 0, err
-//	}, out)
-//}
+// Union outputs a collection that holds unique values of in and values collections
+func Union(in Collection, values Collection, out Pointer) error {
 
-//	result := []interface{}{}
-//	for _, array := range arrays {
-//		ForEach(array, func(el interface{}, i int, array []interface{}) {
-//			if IndexOf(result, el, 0) == -1 {
-//				result = append(result, el)
-//			}
-//		})
-//	}
-//	return result
-//}
+	if !IsCollection(in) {
+		return NotACollection("Value %v is not a collection", in)
+	}
+	if !IsCollection(values) {
+		return NotACollection("Value %v is not a collection", values)
+	}
+	if !IsPointer(out) {
+		return NotPointer("Value %v is not a pointer", out)
+	}
+	inVal := reflect.ValueOf(in)
+	valuesVal := reflect.ValueOf(values)
+	outVal := reflect.ValueOf(out)
+	if a, b := inVal.Type(), valuesVal.Type(); a != b {
+		return NotAssignable("Collection of type '%v' doesn't match type  ", a, b)
+	}
+	if a, c := inVal.Type(), outVal.Elem().Type(); !a.AssignableTo(c) {
+		return NotAssignable("Collection of type '%v' is not assignable to output of type '%v'", a, c)
+	}
+	for i := 0; i < valuesVal.Len(); i++ {
+		inVal = reflect.Append(inVal, valuesVal.Index(i))
+	}
+	if err := Unique(inVal.Interface(), out); err != nil {
+		return err
+	}
+	return nil
+}
 
 // Unique filters remove duplicate values from an array
 func Unique(in Collection, out Pointer) error {
@@ -187,12 +197,19 @@ func (pipeline *Pipeline) Filter(predicate Function) *Pipeline {
 	return pipeline
 }
 
-//func (pipeline *Pipeline) Union(values Collection) *Pipeline {
-//	pipeline.Queue = append(pipeline.Queue, func() error {
-//		return Union(pipeline.Value, values, &pipeline.Value)
-//	})
-//	return pipeline
-//}
+func (pipeline *Pipeline) Union(values Collection) *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Union(pipeline.Value, values, &pipeline.Value)
+	})
+	return pipeline
+}
+
+func (pipeline *Pipeline) Xor(values Collection) *Pipeline {
+	pipeline.Queue = append(pipeline.Queue, func() error {
+		return Xor(pipeline.Value, values, &pipeline.Value)
+	})
+	return pipeline
+}
 
 func (pipeline *Pipeline) Unique() *Pipeline {
 	pipeline.Queue = append(pipeline.Queue, func() error {
