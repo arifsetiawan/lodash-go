@@ -7,47 +7,37 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mparaiso/lodash-go"
 	"strings"
+
+	"github.com/mparaiso/lodash-go"
 )
 
-//func TestChunk(t *testing.T) {
-//	tests := []struct {
-//		// Test description.
-//		name string
-//		// Parameters.
-//		collection []interface{}
-//		length     int
-//		// Expected results.
-//		want []interface{}
-//	}{
-//		{"first test", []interface{}{1, 2, 3, 4}, 2, []interface{}{[]interface{}{1, 2}, []interface{}{3, 4}}},
-//	}
-//	for _, tt := range tests {
-//		if got := lo.Chunk(tt.collection, tt.length); !reflect.DeepEqual(got, tt.want) {
-//			t.Errorf("%q. Chunk() = %v, want %v", tt.name, got, tt.want)
-//		}
-//	}
-//}
+func ExampleGroupBy() {
+	// Group people by country
 
-//func TestDifference(t *testing.T) {
-//	tests := []struct {
-//		// Test description.
-//		name string
-//		// Parameters.
-//		array  []interface{}
-//		values []interface{}
-//		// Expected results.
-//		want []interface{}
-//	}{
-//		{"Difference between 2 arrays", []interface{}{1, 2, 3, 4}, []interface{}{2, 4}, []interface{}{1, 3}},
-//	}
-//	for _, tt := range tests {
-//		if got := lo.Difference(tt.array, tt.values); !reflect.DeepEqual(got, tt.want) {
-//			t.Errorf("%q. Difference() = %v, want %v", tt.name, got, tt.want)
-//		}
-//	}
-//}
+	type Person struct {
+		Name    string
+		Country string
+	}
+	var group map[string][]Person
+	err := lo.GroupBy([]Person{
+		{"John", "France"},
+		{"Jack", "Ireland"},
+		{"Igor", "Germany"},
+		{"Anna", "Germany"},
+		{"Louise", "France"},
+	}, func(person Person) (string, Person) {
+		return person.Country, person
+	}, &group)
+	fmt.Println(err)
+	fmt.Println(group["Germany"])
+	fmt.Println(group["Ireland"])
+
+	// Output:
+	// <nil>
+	// [{Igor Germany} {Anna Germany}]
+	// [{Jack Ireland}]
+}
 
 //func TestWithout(t *testing.T) {
 //	tests := []struct {
@@ -67,30 +57,6 @@ import (
 //		}
 //	}
 //}
-
-
-//func TestXor(t *testing.T) {
-//	tests := []struct {
-//		// Test description.
-//		name string
-//		// Parameters.
-//		arrays [][]interface{}
-//		// Expected results.
-//		want []interface{}
-//	}{
-//		{
-//			"Xor of arrays",
-//			[][]interface{}{{1, 2, 3, 4}, {2, 3, 5}, {0, 2, 3, 6}},
-//			[]interface{}{1, 4, 5, 0, 2, 3, 6},
-//		},
-//	}
-//	for _, tt := range tests {
-//		if got := lo.Xor(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
-//			t.Errorf("%q. Xor() = %v, want %v", tt.name, got, tt.want)
-//		}
-//}
-//
-//	}
 
 //func TestLastIndexOf(t *testing.T) {
 //	tests := []struct {
@@ -112,41 +78,25 @@ import (
 //	}
 //}
 
-//func TestUnion(t *testing.T) {
-//	tests := []struct {
-//		// Test description.
-//		name string
-//		// Parameters.
-//		arrays [][]interface{}
-//		// Expected results.
-//		want []interface{}
-//	}{}
-//	for _, tt := range tests {
-//		if got := lo.Union(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
-//			t.Errorf("%q. Union() = %v, want %v", tt.name, got, tt.want)
-//		}
-//	}
-//}
-
 func Example() {
 	// Counting words
-	const words=`Lorem ipsum nascetur,
+	const words = `Lorem ipsum nascetur,
             nascetur adipiscing. Aenean commodo nascetur.
             Aenean nascetur commodo ridiculus nascetur,
             commodo ,nascetur consequat.`
 
 	var result map[string]int
-	err:=lo.In(strings.Split(words," ")).
-		Map(func(word string)string{
-		return strings.Trim(strings.Trim(word,"\n\t "),".,!")
+	err := lo.In(strings.Split(words, " ")).
+		Map(func(word string) string {
+		return strings.Trim(strings.Trim(word, "\n\t "), ".,!")
 	}).
-		Filter(func(word string)bool{
-		return word!=""
+		Filter(func(word string) bool {
+		return word != ""
 	}).
-		Reduce(func(Map map[string]int,word string)map[string]int{
-		Map[word] = Map[word]+1
+		Reduce(func(Map map[string]int, word string) map[string]int {
+		Map[word] = Map[word] + 1
 		return Map
-	},map[string]int{}).
+	}, map[string]int{}).
 		Out(&result)
 	fmt.Println(err)
 	fmt.Println(result["nascetur"])

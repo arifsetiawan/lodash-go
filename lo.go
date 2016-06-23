@@ -137,25 +137,49 @@ func Unique(in Collection, out Pointer) error {
 	return nil
 }
 
-//// Zip zips an array
-//func Zip(arrays ...[]interface{}) []interface{} {
-//	result := []interface{}{}
-//	switch len(arrays) {
-//	case 0:
-//		return result
-//	case 1:
-//		return arrays[0][:]
-//	default:
-//		ForEach(arrays[0], func(el interface{}, i int, array []interface{}) {
-//			a := []interface{}{}
-//			for val := range arrays {
-//				a = append(array, val)
-//			}
-//			result = append(result, a)
-//		})
-//	}
-//	return result
-//}
+func GroupBy(in Collection, function Function, out Pointer) error {
+	if !IsCollection(in) {
+		return NotACollection("Value %v is not a collection", in)
+	}
+	if !IsFunction(function) {
+		return NotAFunction("Value %v is not a function", function)
+	}
+	if !IsPointer(out) {
+		return NotPointer("Value %v is not a pointer", out)
+	}
+	functionValue := reflect.ValueOf(function)
+	functionType := functionValue.Type()
+	mapParam1 := functionType.Out(0)
+	mapParam2 := functionType.Out(1)
+	numOut := functionType.NumOut()
+	sliceOfMapParam2Type := reflect.SliceOf(mapParam2)
+	mapResultType := reflect.MapOf(mapParam1, sliceOfMapParam2Type)
+	outValue := reflect.ValueOf(out)
+	outType := outValue.Type()
+
+	mapResultValue := reflect.MakeMap(mapResultType)
+
+	collectionValue := reflect.ValueOf(in)
+	l := collectionValue.Len()
+	for i := 0; i < l; i++ {
+		resultValues := functionValue.Call([]reflect.Value{collectionValue.Index(i)})
+		if numOut == 3 {
+			if err, ok := resultValues[2].Interface().(error); ok && err != nil {
+				return err
+			}
+		}
+		if !mapResultValue.MapIndex(resultValues[0]).IsValid() {
+			mapResultValue.SetMapIndex(resultValues[0], reflect.MakeSlice(sliceOfMapParam2Type, 0, 0))
+		}
+		mapResultValue.SetMapIndex(resultValues[0], reflect.Append(mapResultValue.MapIndex(resultValues[0]), resultValues[1]))
+	}
+	if mapResultType.AssignableTo(outType.Elem()) {
+		outValue.Elem().Set(mapResultValue)
+	} else {
+		return NotAssignable("Result of type '%v' is not assignable to out type '%v'", mapResultType, outType)
+	}
+	return nil
+}
 
 type Pipeline struct {
 	Value Any
@@ -387,7 +411,7 @@ func Map(collection Collection, function Function, result Pointer) error {
 // Reduce returns a value from an array by applying a reducer function to each element of an array. That value can be anything
 func Reduce(collection Collection, function Function, initial Any, resultPointer Pointer) error {
 	collectionValue := reflect.Indirect(reflect.ValueOf(collection))
-	if collectionValue.Kind() != reflect.Slice && collectionValue.Kind() != reflect.Array {
+	if !IsCollection(collection) {
 		return NotACollection("Collection '%v' is not a slice")
 	}
 	collectionType := collectionValue.Type()
