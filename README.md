@@ -33,7 +33,47 @@ lo is coded in Go.
 - [x] IndexOf
 	
 ### Examples
+#### Count words
 
+```go
+
+	package main
+	
+	import(
+		"fmt"
+		"github.com/Mparaiso/lodash-go"
+	)
+	
+	func Main(){
+		// Counting words
+		const words=`Lorem ipsum nascetur,
+			nascetur adipiscing. Aenean commodo nascetur.
+            Aenean nascetur commodo ridiculus nascetur,
+            commodo ,nascetur consequat.`
+
+	    var result map[string]int
+		err:=lo.In(strings.Split(words," ")).
+			Map(func(word string)string{
+			return strings.Trim(strings.Trim(word,"\n\t "),".,!")
+		}).
+			Filter(func(word string)bool{
+			return word!=""
+		}).
+			Reduce(func(Map map[string]int,word string)map[string]int{
+			Map[word] = Map[word]+1
+			return Map
+		},map[string]int{}).
+			Out(&result)
+		fmt.Println(err)
+		fmt.Println(result["nascetur"])
+		fmt.Println(result["commodo"])
+		
+	    // Output:
+		// <nil>
+		// 6
+		// 3
+	}
+```
 #### Map Filter Reduce to calculate an bill
 
 ```go

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/mparaiso/lodash-go"
+	"strings"
 )
 
 //func TestChunk(t *testing.T) {
@@ -67,6 +68,7 @@ import (
 //	}
 //}
 
+
 //func TestXor(t *testing.T) {
 //	tests := []struct {
 //		// Test description.
@@ -86,8 +88,9 @@ import (
 //		if got := lo.Xor(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
 //			t.Errorf("%q. Xor() = %v, want %v", tt.name, got, tt.want)
 //		}
-//	}
 //}
+//
+//	}
 
 //func TestLastIndexOf(t *testing.T) {
 //	tests := []struct {
@@ -125,23 +128,35 @@ import (
 //	}
 //}
 
-//func TestUnique(t *testing.T) {
-//	tests := []struct {
-//		// Test description.
-//		name string
-//		// Parameters.
-//		array []interface{}
-//		// Expected results.
-//		want []interface{}
-//	}{
-//		{"Unique values", []interface{}{6, 4, 5, 6, 2, 4}, []interface{}{6, 4, 5, 2}},
-//	}
-//	for _, tt := range tests {
-//		if got := lo.Unique(tt.array); !reflect.DeepEqual(got, tt.want) {
-//			t.Errorf("%q. Unique() = %v, want %v", tt.name, got, tt.want)
-//		}
-//	}
-//}
+func Example() {
+	// Counting words
+	const words=`Lorem ipsum nascetur,
+            nascetur adipiscing. Aenean commodo nascetur.
+            Aenean nascetur commodo ridiculus nascetur,
+            commodo ,nascetur consequat.`
+
+	var result map[string]int
+	err:=lo.In(strings.Split(words," ")).
+		Map(func(word string)string{
+		return strings.Trim(strings.Trim(word,"\n\t "),".,!")
+	}).
+		Filter(func(word string)bool{
+		return word!=""
+	}).
+		Reduce(func(Map map[string]int,word string)map[string]int{
+		Map[word] = Map[word]+1
+		return Map
+	},map[string]int{}).
+		Out(&result)
+	fmt.Println(err)
+	fmt.Println(result["nascetur"])
+	fmt.Println(result["commodo"])
+
+	// Output:
+	// <nil>
+	// 6
+	// 3
+}
 
 func ExamplePipeline() {
 	// Error while queued operations are performed
