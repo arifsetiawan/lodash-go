@@ -50,28 +50,6 @@ func Intersection(in Collection, values Collection, out Collection) error {
 	}, out)
 }
 
-// Without creates an array excluding all provided values
-//func Without(array []interface{}, values ...interface{}) []interface{} {
-//	return Difference(array, values)
-//}
-
-// Intersection creates an array of unique values in all provided arrays
-//func Intersection(arrays ...[]interface{}) []interface{} {
-//	switch len(arrays) {
-//	case 0:
-//		return []interface{}{}
-//	case 1:
-//		return Unique(arrays[0])
-//	case 2:
-//		u := Unique(arrays[1])
-//		a := Unique(arrays[0])
-//		return Filter(a, func(el interface{}, i int, a []interface{}) bool {
-//			return IndexOf(u, el, 0) >= 0
-//		}, nil)
-//	}
-//	return Intersection(append([][]interface{}{Intersection(arrays[0], arrays[1])}, arrays[2:]...)...)
-//}
-
 // Xor creates an array that is the symmetric difference of the provided arrays.
 //func Xor(arrays ...[]interface{}) []interface{} {
 //	switch len(arrays) {
@@ -101,8 +79,14 @@ func Intersection(in Collection, values Collection, out Collection) error {
 //	return -1
 //}
 
-//// Union returns an array filled by all unique values of the arrays
-//func Union(arrays ...[]interface{}) []interface{} {
+//// Union outputs a collection that holds values existing in both in and values collections
+//func Union(in Collection, values Collection, out Pointer) error {
+//	return Filter(in, func(element interface{}) (bool, error) {
+//		index, err := IndexOf(values, element, 0)
+//		return index >= 0, err
+//	}, out)
+//}
+
 //	result := []interface{}{}
 //	for _, array := range arrays {
 //		ForEach(array, func(el interface{}, i int, array []interface{}) {
@@ -203,6 +187,13 @@ func (pipeline *Pipeline) Filter(predicate Function) *Pipeline {
 	return pipeline
 }
 
+//func (pipeline *Pipeline) Union(values Collection) *Pipeline {
+//	pipeline.Queue = append(pipeline.Queue, func() error {
+//		return Union(pipeline.Value, values, &pipeline.Value)
+//	})
+//	return pipeline
+//}
+
 func (pipeline *Pipeline) Unique() *Pipeline {
 	pipeline.Queue = append(pipeline.Queue, func() error {
 		return Unique(pipeline.Value, &pipeline.Value)
@@ -228,9 +219,9 @@ func (pipeline *Pipeline) Out(out Pointer) error {
 	if !IsPointer(out) {
 		return NotPointer("Value '%s' is not a pointer", out)
 	}
-	for _, operation := range pipeline.Queue {
+	for i, operation := range pipeline.Queue {
 		if err := operation(); err != nil {
-			return err
+			return fmt.Errorf("At step %d : %s", i, err.Error())
 		}
 	}
 	outValue := reflect.ValueOf(out)
@@ -264,6 +255,12 @@ func Filter(in Collection, predicate Function, out Pointer) error {
 	predicateType := predicateValue.Type()
 	numIn := predicateType.NumIn()
 	numOut := predicateType.NumOut()
+	if numIn < 1 || numIn > 4 {
+		return IncorrectInputParameterArity("In parameter arity should be greater than one and lower than four, got '%d'", numIn)
+	}
+	if numOut < 1 || numOut > 3 {
+		return IncorrectOutputParameterArity("In parameter arity should be greater than one and lower than three,got '%d'", numOut)
+	}
 	outValue := reflect.ValueOf(out)
 	resultValue := reflect.MakeSlice(inType, 0, 0)
 	if a, b := resultValue.Type(), outValue.Elem().Type(); !a.AssignableTo(b) {
@@ -309,7 +306,7 @@ func IndexOf(collection Collection, element Any, start int) (int, error) {
 		start = 0
 	}
 	for i := start; i < collectionLen; i++ {
-		if collectionValue.Index(i).Interface() == element {
+		if reflect.DeepEqual(collectionValue.Index(i).Interface(), element) {
 			return i, nil
 		}
 	}
@@ -351,7 +348,6 @@ func Map(collection Collection, function Function, result Pointer) error {
 		}
 	}
 	collectionValue := reflect.Indirect(reflect.ValueOf(collection))
-	// collectionType := collectionValue.Type()
 	resultValue := reflect.ValueOf(result)
 	resultType := resultValue.Type()
 	sliceOfCollectionElementType := reflect.SliceOf(functionType.Out(0))

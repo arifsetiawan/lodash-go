@@ -67,28 +67,6 @@ import (
 //	}
 //}
 
-//func TestIntersection(t *testing.T) {
-//	tests := []struct {
-//		// Test description.
-//		name string
-//		// Parameters.
-//		arrays [][]interface{}
-//		// Expected results.
-//		want []interface{}
-//	}{
-//		{
-//			"Intersection of arrays",
-//			[][]interface{}{{1, 2, 3, 4}, {2, 3, 5}, {0, 2, 3, 6}},
-//			[]interface{}{2, 3},
-//		},
-//	}
-//	for _, tt := range tests {
-//		if got := lo.Intersection(tt.arrays...); !reflect.DeepEqual(got, tt.want) {
-//			t.Errorf("%q. Intersection() = %v, want %v", tt.name, got, tt.want)
-//		}
-//	}
-//}
-
 //func TestXor(t *testing.T) {
 //	tests := []struct {
 //		// Test description.
@@ -164,6 +142,21 @@ import (
 //		}
 //	}
 //}
+
+func ExamplePipeline() {
+	// Error while queued operations are performed
+
+	var result interface{}
+	err := lo.In([]string{"a"}).
+		Filter(func(element string) (bool, error) {
+		return false, fmt.Errorf("Something went wrong")
+	}).Out(&result)
+	fmt.Println(err)
+
+	// Output:
+	// At step 0 : Something went wrong
+
+}
 
 func ExamplePipeline_Map() {
 	// Compute the sum of all countries people
@@ -256,24 +249,6 @@ func ExamplePipeline_Reduce() {
 //	}
 //}
 
-//func TestEqual(t *testing.T) {
-//	tests := []struct {
-//		// Test description.
-//		name string
-//		// Parameters.
-//		arrays [][]interface{}
-//		// Expected results.
-//		want bool
-//	}{
-//		{"Array are equals", [][]interface{}{{1, 2}, {1, 2}, {1, 2}}, true},
-//	}
-//	for _, tt := range tests {
-//		if got := lo.Equal(tt.arrays...); got != tt.want {
-//			t.Errorf("%q. Equal() = %v, want %v", tt.name, got, tt.want)
-//		}
-//	}
-//}
-
 func TestFilter(t *testing.T) {
 	tests := []struct {
 		// Test description.
@@ -321,6 +296,21 @@ func TestIndexOf(t *testing.T) {
 		}
 	}
 }
+
+//func ExampleUnion() {
+//	// Compute the union of 2 slices
+//	var union []string
+//	err := lo.Union([]string{"a", "b", "c", "d", "e"},
+//		[]string{"a", "c", "g", "x", "e"},
+//		&union)
+//	fmt.Println(err)
+//	fmt.Println(union)
+//	// Output:
+//	// <nil>
+//	// [a c e]
+
+//}
+
 func ExampleDifference() {
 	var difference []string
 	err := lo.Difference([]string{"a", "b", "c", "d"}, []string{"a", "c"}, &difference)
