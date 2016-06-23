@@ -34,7 +34,7 @@ lo is coded in Go.
 	
 ### Examples
 
-#### Map Filter Reduce to compute an Order
+#### Map Filter Reduce to calculate an bill
 
 ```go
 
