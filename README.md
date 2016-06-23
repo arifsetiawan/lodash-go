@@ -14,6 +14,31 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 	
 ### Examples:
 
+#### Filter out odd numbers
+
+```go
+	package main
+	
+	import(
+		"fmt"
+		"github.com"/mparaiso/lodash-go"
+	)
+	
+	func Main(){
+		var evenNumbers []int
+		err := lo.Filter([]int{0, 1, 2, 3, 4}, func(element int) bool {
+			return element%2 == 0
+		}, &evenNumbers)
+		
+		fmt.Println(err)
+		fmt.Println(evenNumbers)
+		
+		// Output:
+		// <nil>
+		// [0 2 4]
+	}
+
+```
 #### Compute the mean of an array of integers
 	
 ```go

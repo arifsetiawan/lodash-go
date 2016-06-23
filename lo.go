@@ -321,11 +321,11 @@ func IndexOf(collection Collection, element Any, start int) (int, error) {
 }
 
 // ForEach executes handler on each element of the collection
-func ForEach(collection []interface{}, handler func(interface{}, int, []interface{})) {
-	for index, value := range collection {
-		handler(value, index, collection)
-	}
-}
+//func ForEach(collection []interface{}, handler func(interface{}, int, []interface{})) {
+//	for index, value := range collection {
+//		handler(value, index, collection)
+//	}
+//}
 
 // Map maps a collection to a result by passing each element of the collection
 // to a function
