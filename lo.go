@@ -137,16 +137,6 @@ func Unique(in Collection, out Pointer) error {
 	return nil
 }
 
-//// First returns the first element of an array
-//func First(array []interface{}) interface{} {
-//	return array[0]
-//}
-
-//// Last returns the last element of an array
-//func Last(array []interface{}) interface{} {
-//	return array[len(array)-1]
-//}
-
 //// Zip zips an array
 //func Zip(arrays ...[]interface{}) []interface{} {
 //	result := []interface{}{}
