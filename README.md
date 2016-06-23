@@ -43,6 +43,8 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 		
 #### Grouping adults by country using a pipeline
 
+```go
+	
 	package main
 	
 	import "github.com/mparaiso/lodash-go" 
@@ -84,8 +86,11 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 		// 2
 		// 0
 	}
+```
 
 #### Using a pipeline to compute the sum of all people in countries
+
+```go
 
 	package main
 	
@@ -110,3 +115,4 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 		// <nil>
 		// 6000
 		}
+```
