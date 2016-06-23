@@ -16,6 +16,7 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 
 #### Compute the mean of an array of integers
 	
+	```go
 	package main
 	
 	import "github.com/Mparaiso/lodash-go"
@@ -38,6 +39,7 @@ such as map, reduce and filter, that work on slices and arrays of any types. lo 
 		// 20
 		// <nil>
 	}
+	```
 		
 #### Grouping adults by country using a pipeline
 
